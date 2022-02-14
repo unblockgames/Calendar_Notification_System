@@ -4,6 +4,7 @@ from google.oauth2 import service_account
 from crontab import CronTab
 import json
 import sqlite3
+import hashlib as h
 from datetime import datetime, timedelta
 
 # SQLite database connection object
@@ -71,13 +72,17 @@ events = service.events().list(calendarId='unblockgames@gmail.com',  # TODO: Mak
 # Check to see if the events in google calendar exist in the databse.
 # If they dont, add them or if they are different, update them.
 
-# TODO: Implement hashing of entire event to verify complete match
 for event in events['items']:
+    jsonEvent = json.dumps(event)
+    eventHash = h.sha256(jsonEvent.encode('utf-8')).hexdigest()
     cur.execute(
-        "SELECT googleId FROM events WHERE googleId='{}'".format(event['id']))
+        "SELECT event_hash FROM events WHERE googleId='{}'".format(event['id']))
     fetched = cur.fetchall()
     if len(fetched) > 0:
         print("Event \"{}\" already exists!".format(event['summary']))
+        if fetched[0][0] != eventHash:
+            print("Hashes are different! Updating event details")
+            # TODO: Implement updating of details when hashes don't match
     else:
         # add event to table
         # Insert a row of data
@@ -87,8 +92,8 @@ for event in events['items']:
             event['location'] = "null"
         if 'attendees' not in event:
             event['attendees'] = "null"
-        sqlStatement = "INSERT INTO events VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', false, NULL)".format(event['id'], json.dumps(
-            event['start']), json.dumps(event['end']), event['summary'].replace("'", ""), event['description'], event['location'], json.dumps(event['attendees']))
+        sqlStatement = "INSERT INTO events VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', false, NULL, '{}')".format(event['id'], json.dumps(
+            event['start']), json.dumps(event['end']), event['summary'].replace("'", ""), event['description'], event['location'], json.dumps(event['attendees']), eventHash)
         cur.execute(sqlStatement)
         con.commit()
 
