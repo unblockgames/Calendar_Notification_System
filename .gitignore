@@ -3,3 +3,4 @@ service_account_secret.json
 example.db
 .vscode
 __pycache__
+scripts

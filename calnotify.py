@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from crontab import CronTab
@@ -18,20 +18,28 @@ def scheduleNotification(data):
     try:
         # create the py file to be executed
         f = open(
-            '/Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System/{}.py'.format(data[0]), 'w')
+            '/Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System/scripts/{}.py'.format(data[0]), 'w')
         code = "import sys\nsys.path.append(\'/Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System\')\nfrom twiliocall import callPerson\ncallPerson(\'{}\')".format(
             data[0])
         f.write(code)
         f.close()
         # create cron job
-        command = '/Users/jasoncasey/.local/share/virtualenvs/Calendar_Notification_System-lf8G-LEN/bin/python3 /Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System/{}.py >> /tmp/log/stdout.log 2>&1'.format(
+        command = '/Users/jasoncasey/.local/share/virtualenvs/Calendar_Notification_System-lf8G-LEN/bin/python3 /Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System/scripts/{}.py >> /tmp/log/stdout.log 2>&1'.format(
             data[0])
         my_cron = CronTab(user='jasoncasey')
         job = my_cron.new(command=command)
         # Set up time for notification to happen
-
-        startTime = datetime.strptime(json.loads(
-            data[1])['dateTime'][0: 16], "%Y-%m-%dT%H:%M")
+        dateObj = json.loads(data[1])
+        if 'dateTime' in dateObj:
+            # TODO: Fix bug where dateTime doesn't exist.
+            startTime = datetime.strptime(
+                dateObj['dateTime'][0: 16], "%Y-%m-%dT%H:%M")
+        elif 'date' in dateObj:
+            # startTime = datetime.strptime(
+            #    dateObj['date'], "%Y-%m-%d")
+            return
+        else:
+            print("An error has occurred.")
         hourBefore = timedelta(hours=-1) + startTime
         job.minute.on(startTime.minute)
         job.hour.on(hourBefore.hour)
@@ -47,15 +55,23 @@ def scheduleNotification(data):
         return False
 
 
+# Grab all the upcoming events on the google calendar
 secret_file = './service_account_secret.json'
 credentials = service_account.Credentials.from_service_account_file(
     secret_file, scopes=SCOPES)
 service = build('calendar', 'v3', credentials=credentials)
-calendar = service.calendars().get(calendarId='unblockgames@gmail.com').execute()
-events = service.events().list(calendarId='unblockgames@gmail.com',
-                               timeMin='2022-02-07T00:00:00-06:00', timeMax='2022-02-28T00:00:00-06:00').execute()
+calendar = service.calendars().get(
+    calendarId='unblockgames@gmail.com').execute()  # TODO: Make dynamic
+timeMin = datetime.now().strftime("%Y-%m-%dT%H:%M:00-06:00")
+timeMax = (datetime.now() + timedelta(days=+30)
+           ).strftime("%Y-%m-%dT%H:%M:00-06:00")
+events = service.events().list(calendarId='unblockgames@gmail.com',  # TODO: Make dynamic
+                               timeMin=timeMin, timeMax=timeMax).execute()
 
-# Perform a query and if no event, add event
+# Check to see if the events in google calendar exist in the databse.
+# If they dont, add them or if they are different, update them.
+
+# TODO: Implement hashing of entire event to verify complete match
 for event in events['items']:
     cur.execute(
         "SELECT googleId FROM events WHERE googleId='{}'".format(event['id']))
