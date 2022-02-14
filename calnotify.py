@@ -7,6 +7,11 @@ import sqlite3
 import hashlib as h
 from datetime import datetime, timedelta
 
+with open('./config.json', 'r') as f:
+    CONFIG = json.load(f)
+DIRECTORY = CONFIG['Directories']['codebase']
+PYTHON3 = CONFIG['Directories']['python3']
+
 # SQLite database connection object
 con = sqlite3.connect('example.db')
 # SQLite database cursor object
@@ -19,15 +24,15 @@ def scheduleNotification(data):
     try:
         # create the py file to be executed
         f = open(
-            '/Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System/scripts/{}.py'.format(data[0]), 'w')
-        code = "import sys\nsys.path.append(\'/Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System\')\nfrom twiliocall import callPerson\ncallPerson(\'{}\')".format(
+            DIRECTORY + '/scripts/{}.py'.format(data[0]), 'w')
+        code = "import sys\nsys.path.append(\'" + DIRECTORY + "\')\nfrom twiliocall import callPerson\ncallPerson(\'{}\')".format(
             data[0])
         f.write(code)
         f.close()
         # create cron job
-        command = '/Users/jasoncasey/.local/share/virtualenvs/Calendar_Notification_System-lf8G-LEN/bin/python3 /Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System/scripts/{}.py >> /tmp/log/stdout.log 2>&1'.format(
+        command = PYTHON3 + ' ' + DIRECTORY + '/scripts/{}.py >> ' + CONFIG['Directories']['cron_output'] + ' 2>&1'.format(
             data[0])
-        my_cron = CronTab(user='jasoncasey')
+        my_cron = CronTab(user=CONFIG['User'])
         job = my_cron.new(command=command)
         # Set up time for notification to happen
         dateObj = json.loads(data[1])
@@ -62,11 +67,11 @@ credentials = service_account.Credentials.from_service_account_file(
     secret_file, scopes=SCOPES)
 service = build('calendar', 'v3', credentials=credentials)
 calendar = service.calendars().get(
-    calendarId='unblockgames@gmail.com').execute()  # TODO: Make dynamic
+    calendarId=CONFIG['Google']['calendar_id']).execute()
 timeMin = datetime.now().strftime("%Y-%m-%dT%H:%M:00-06:00")
 timeMax = (datetime.now() + timedelta(days=+30)
            ).strftime("%Y-%m-%dT%H:%M:00-06:00")
-events = service.events().list(calendarId='unblockgames@gmail.com',  # TODO: Make dynamic
+events = service.events().list(calendarId=CONFIG['Google']['calendar_id'],
                                timeMin=timeMin, timeMax=timeMax).execute()
 
 # Check to see if the events in google calendar exist in the databse.

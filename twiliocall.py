@@ -4,11 +4,11 @@ from twilio.twiml.voice_response import VoiceResponse
 import json
 
 with open('/Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System/config.json', 'r') as f:
-    config = json.load(f)
+    CONFIG = json.load(f)
 # Your Account SID from twilio.com/console
-account_sid = config['Twilio']['account_sid']
+account_sid = CONFIG['Twilio']['account_sid']
 # Your Auth Token from twilio.com/console
-auth_token = config['Twilio']['auth_token']
+auth_token = CONFIG['Twilio']['auth_token']
 client = Client(account_sid, auth_token)
 # SQLite database connection object
 con = sqlite3.connect(
