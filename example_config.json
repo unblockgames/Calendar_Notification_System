@@ -1,0 +1,15 @@
+{
+    "Twilio": {
+        "account_sid": "{YOUR_TWILIO_SID}",
+        "auth_token": "{YOUR_TWILIO_AUTH_TOKEN}"
+    },
+    "Google": {
+        "calendar_id": "unblockgames@gmail.com"
+    },
+    "Directories": {
+        "codebase": "/Users/jasoncasey/Documents/JasonCodeBook/Calendar_Notification_System",
+        "python3": "/Users/jasoncasey/.local/share/virtualenvs/Calendar_Notification_System-lf8G-LEN/bin/python3",
+        "cron_output": "/tmp/log/stdout.log"
+    },
+    "User": "jasoncasey"
+}
