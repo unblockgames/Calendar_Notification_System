@@ -7,13 +7,13 @@ import sqlite3
 import hashlib as h
 from datetime import datetime, timedelta
 
-with open('./config.json', 'r') as f:
+with open('/home/app/config.json', 'r') as f:
     CONFIG = json.load(f)
 DIRECTORY = CONFIG['Directories']['codebase']
 PYTHON3 = CONFIG['Directories']['python3']
 
 # SQLite database connection object
-con = sqlite3.connect('example.db')
+con = sqlite3.connect(DIRECTORY + '/calendar.db')
 # SQLite database cursor object
 cur = con.cursor()
 
@@ -30,22 +30,36 @@ def scheduleNotification(data):
         f.write(code)
         f.close()
         # create cron job
-        command = PYTHON3 + ' ' + DIRECTORY + '/scripts/{}.py >> ' + CONFIG['Directories']['cron_output'] + ' 2>&1'.format(
-            data[0])
+        command = PYTHON3 + ' ' + DIRECTORY + \
+            '/scripts/{}.py >> '.format(data[0]) + \
+            CONFIG['Directories']['cron_output'] + ' 2>&1'
         my_cron = CronTab(user=CONFIG['User'])
         job = my_cron.new(command=command)
         # Set up time for notification to happen
         dateObj = json.loads(data[1])
         if 'dateTime' in dateObj:
-            # TODO: Fix bug where dateTime doesn't exist.
+            timezoneSign = dateObj['dateTime'][19]
+            timezoneHour = int(dateObj['dateTime'][20:22])
+            timezoneMinute = int(dateObj['dateTime'][23:25])
             startTime = datetime.strptime(
                 dateObj['dateTime'][0: 16], "%Y-%m-%dT%H:%M")
+            print(startTime)
         elif 'date' in dateObj:
             # startTime = datetime.strptime(
             #    dateObj['date'], "%Y-%m-%d")
             return
         else:
             print("An error has occurred.")
+
+        # Convert local time to UTC
+        if timezoneSign == '-':
+            startTime = startTime + \
+                timedelta(hours=timezoneHour, minutes=timezoneMinute)
+        elif timezoneSign == '+':
+            startTime = startTime - \
+                timedelta(hours=timezoneHour, minutes=timezoneMinute)
+        else:
+            print("Timezone sign error")
         hourBefore = timedelta(hours=-1) + startTime
         job.minute.on(startTime.minute)
         job.hour.on(hourBefore.hour)
@@ -62,13 +76,15 @@ def scheduleNotification(data):
 
 
 # Grab all the upcoming events on the google calendar
-secret_file = './service_account_secret.json'
+secret_file = CONFIG['Directories']['codebase'] + \
+    '/service_account_secret.json'
 credentials = service_account.Credentials.from_service_account_file(
     secret_file, scopes=SCOPES)
 service = build('calendar', 'v3', credentials=credentials)
 calendar = service.calendars().get(
     calendarId=CONFIG['Google']['calendar_id']).execute()
-timeMin = datetime.now().strftime("%Y-%m-%dT%H:%M:00-06:00")
+timeMin = (datetime.now() - timedelta(days=1)
+           ).strftime("%Y-%m-%dT%H:%M:00-06:00")
 timeMax = (datetime.now() + timedelta(days=+30)
            ).strftime("%Y-%m-%dT%H:%M:00-06:00")
 events = service.events().list(calendarId=CONFIG['Google']['calendar_id'],
