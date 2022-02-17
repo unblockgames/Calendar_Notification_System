@@ -9,3 +9,13 @@ As the project progresses, I may decide to make this software handle multiple us
 The overall concept is simple. Call google calendar, figure out when your upcoming events are and schedule a cron job to call the twilio api (which in turn calls you)
 
 Enjoy.
+
+INITIAL SETUP...
+
+the calnotify.py is the entry point file in this application. The general usage of this is to adjust the config in accordance with your own information, then run the script. The only thing you need to adjust in the code would be at the beginning of the calnotify.py and the twiliocall.py. The line that opens the config file.
+
+once the config file is successfully opened, the remainder of the program will pull needed info from the config. This is will adjusted in the future so as to not need any code changes to run.
+
+I have also included a Dockerfile that as of now, has been tested and works. If you know how to build a docker image and run it, this should work like a charm.
+
+I will put effort into making this a more hosted and easy to use service in the future.
