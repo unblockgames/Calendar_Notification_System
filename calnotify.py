@@ -47,12 +47,13 @@ def scheduleNotification(data):
                 dateObj['dateTime'][0: 16], "%Y-%m-%dT%H:%M")
             print(startTime)
         elif 'date' in dateObj:
+            print("Date has no time associated with it. It is a whole day event. Notifications for Whole day events are not implemented yet!")
             # startTime = datetime.strptime(
             #    dateObj['date'], "%Y-%m-%d")
             return
         else:
-            print("An error has occurred.")
-
+            print(
+                "Error! Neither \"dateTime\" or \"date\" keys were found in the event dictionary.")
         # Convert local time to UTC
         if timezoneSign == '-':
             startTime = startTime + \
@@ -104,7 +105,7 @@ for event in events['items']:
     if len(fetched) > 0:
         print("Event \"{}\" already exists!".format(event['summary']))
         if fetched[0][0] != eventHash:
-            print("Hashes are different! Updating event details")
+            print("Hashes are different! Updating event details NOT YET IMPLEMENTED!!")
             # TODO: Implement updating of details when hashes don't match
     else:
         # add event to table
