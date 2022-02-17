@@ -11,5 +11,6 @@
         "python3": "/Users/jasoncasey/.local/share/virtualenvs/Calendar_Notification_System-lf8G-LEN/bin/python3",
         "cron_output": "/tmp/log/stdout.log"
     },
-    "User": "jasoncasey"
+    "User": "jasoncasey",
+    "minutesBefore": "60"
 }

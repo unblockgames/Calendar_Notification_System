@@ -11,6 +11,8 @@ with open('/home/app/config.json', 'r') as f:
     CONFIG = json.load(f)
 DIRECTORY = CONFIG['Directories']['codebase']
 PYTHON3 = CONFIG['Directories']['python3']
+# TODO: Add a way for this to be dynamic on a per event basis!
+minutesBefore = int(CONFIG['minutesBefore'])
 
 # SQLite database connection object
 con = sqlite3.connect(DIRECTORY + '/calendar.db')
@@ -60,7 +62,7 @@ def scheduleNotification(data):
                 timedelta(hours=timezoneHour, minutes=timezoneMinute)
         else:
             print("Timezone sign error")
-        hourBefore = timedelta(hours=-1) + startTime
+        hourBefore = timedelta(minutes=-minutesBefore) + startTime
         job.minute.on(startTime.minute)
         job.hour.on(hourBefore.hour)
         job.month.on(startTime.month)
