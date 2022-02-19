@@ -2,9 +2,8 @@ import sqlite3
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse
 import json
+from config import CONFIG
 
-with open('/home/app/config.json', 'r') as f:
-    CONFIG = json.load(f)
 DIRECTORY = CONFIG['Directories']['codebase']
 
 # Your Account SID from twilio.com/console
