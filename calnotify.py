@@ -7,6 +7,8 @@ import sqlite3
 import hashlib as h
 from datetime import datetime, timedelta
 
+#Developtment
+
 with open('/home/app/config.json', 'r') as f:
     CONFIG = json.load(f)
 DIRECTORY = CONFIG['Directories']['codebase']
