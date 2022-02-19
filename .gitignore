@@ -5,3 +5,4 @@ example.db
 __pycache__
 scripts
 config_for_mac.json
+config.py

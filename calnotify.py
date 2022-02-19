@@ -32,44 +32,23 @@ def scheduleNotification(data):
             data[0])
         f.write(code)
         f.close()
-        # create cron job
         command = PYTHON3 + ' ' + DIRECTORY + \
             '/scripts/{}.py >> '.format(data[0]) + \
             CONFIG['Directories']['cron_output'] + ' 2>&1'
         my_cron = CronTab(user=CONFIG['User'])
-        job = my_cron.new(command=command)
-        # Set up time for notification to happen
-        dateObj = json.loads(data[1])
-        if 'dateTime' in dateObj:
-            timezoneSign = dateObj['dateTime'][19]
-            timezoneHour = int(dateObj['dateTime'][20:22])
-            timezoneMinute = int(dateObj['dateTime'][23:25])
-            startTime = datetime.strptime(
-                dateObj['dateTime'][0: 16], "%Y-%m-%dT%H:%M")
-            print(startTime)
-        elif 'date' in dateObj:
-            print("Date has no time associated with it. It is a whole day event. Notifications for Whole day events are not implemented yet!")
-            # startTime = datetime.strptime(
-            #    dateObj['date'], "%Y-%m-%d")
-            return
+        description = str(data[4])
+        startIndex = description.find("<notify>")
+        if startIndex > -1:  # Notify was found in description!
+            startIndex += 8
+            endIndex = description.find("</notify>")
+            notifications = description[startIndex:endIndex].split(',')
+            for notification in notifications:
+                # schedule cron job for each one of these
+                createCronJob(my_cron, json.loads(
+                    data[1]), command, int(notification))
         else:
-            print(
-                "Error! Neither \"dateTime\" or \"date\" keys were found in the event dictionary.")
-        # Convert local time to UTC
-        if timezoneSign == '-':
-            startTime = startTime + \
-                timedelta(hours=timezoneHour, minutes=timezoneMinute)
-        elif timezoneSign == '+':
-            startTime = startTime - \
-                timedelta(hours=timezoneHour, minutes=timezoneMinute)
-        else:
-            print("Timezone sign error")
-        hourBefore = timedelta(minutes=-minutesBefore) + startTime
-        job.minute.on(startTime.minute)
-        job.hour.on(hourBefore.hour)
-        job.month.on(startTime.month)
-        job.day.on(startTime.day)
-        my_cron.write()
+            # create cron job...
+            createCronJob(my_cron, json.loads(data[1]), command, minutesBefore)
         # change database
         cur.execute(
             "UPDATE events SET scheduled=TRUE WHERE googleId='{}'".format(data[0]))
@@ -77,6 +56,42 @@ def scheduleNotification(data):
         return True
     except:
         return False
+
+
+def createCronJob(my_cron, dateObj, command, minutesBefore):
+    job = my_cron.new(command=command)
+    # Set up time for notification to happen
+    if 'dateTime' in dateObj:
+        timezoneSign = dateObj['dateTime'][19]
+        timezoneHour = int(dateObj['dateTime'][20:22])
+        timezoneMinute = int(dateObj['dateTime'][23:25])
+        startTime = datetime.strptime(
+            dateObj['dateTime'][0: 16], "%Y-%m-%dT%H:%M")
+        print(startTime)
+    elif 'date' in dateObj:
+        print("Date has no time associated with it. It is a whole day event. Notifications for Whole day events are not implemented yet!")
+        # startTime = datetime.strptime(
+        #    dateObj['date'], "%Y-%m-%d")
+        return
+    else:
+        print(
+            "Error! Neither \"dateTime\" or \"date\" keys were found in the event dictionary.")
+    # Convert local time to UTC
+    if timezoneSign == '-':
+        startTime = startTime + \
+            timedelta(hours=timezoneHour, minutes=timezoneMinute)
+    elif timezoneSign == '+':
+        startTime = startTime - \
+            timedelta(hours=timezoneHour, minutes=timezoneMinute)
+    else:
+        print("Timezone sign error")
+    startTime = timedelta(minutes=-minutesBefore) + startTime
+    job.minute.on(startTime.minute)
+    job.hour.on(startTime.hour)
+    job.month.on(startTime.month)
+    job.day.on(startTime.day)
+    my_cron.write()
+    return
 
 
 def insertIntoDatabase(event):
@@ -125,8 +140,7 @@ for event in events['items']:
     if len(fetched) > 0:
         print("Event \"{}\" already exists!".format(event['summary']))
         if fetched[0][0] != eventHash:
-            print("Hashes are different! Updating event details NOT YET IMPLEMENTED!!")
-            # TODO: Implement updating of details when hashes don't match
+            print("Hashes are different! Updating event details...")
             # REMOVE CRON JOB
             my_cron = CronTab(user=CONFIG['User'])
             iter = my_cron.find_command(event['id'])
@@ -136,11 +150,11 @@ for event in events['items']:
             # DELETE OLD ENTRY FROM DATABASE
             sqlStatement = "DELETE FROM events WHERE googleId='{}'".format(
                 event['id'])
-            # INSET NEW ENTRY INTO DATABASE
             cur.execute(sqlStatement)
             con.commit()
+            # INSERT NEW ENTRY INTO DATABASE
             insertIntoDatabase(event)
-
+            print("Event details updated!")
     else:
         insertIntoDatabase(event)
 # For each event in the database, check to see which ones have a scheduled notification (phone call)
