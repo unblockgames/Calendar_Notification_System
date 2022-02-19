@@ -6,11 +6,10 @@ import json
 import sqlite3
 import hashlib as h
 from datetime import datetime, timedelta
+from config import CONFIG
 
 #PRODUCTION
 
-with open('/home/app/config.json', 'r') as f:
-    CONFIG = json.load(f)
 DIRECTORY = CONFIG['Directories']['codebase']
 PYTHON3 = CONFIG['Directories']['python3']
 # TODO: Add a way for this to be dynamic on a per event basis!
@@ -80,6 +79,25 @@ def scheduleNotification(data):
         return False
 
 
+def insertIntoDatabase(event):
+    try:
+        # add event to table
+        # Insert a row of data
+        if 'description' not in event:
+            event['description'] = "null"
+        if 'location' not in event:
+            event['location'] = "null"
+        if 'attendees' not in event:
+            event['attendees'] = "null"
+        sqlStatement = "INSERT INTO events VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', false, NULL, '{}')".format(event['id'], json.dumps(
+            event['start']), json.dumps(event['end']), event['summary'].replace("'", ""), event['description'], event['location'], json.dumps(event['attendees']), eventHash)
+        cur.execute(sqlStatement)
+        con.commit()
+    except:
+        pass
+    return
+
+
 # Grab all the upcoming events on the google calendar
 secret_file = CONFIG['Directories']['codebase'] + \
     '/service_account_secret.json'
@@ -109,20 +127,22 @@ for event in events['items']:
         if fetched[0][0] != eventHash:
             print("Hashes are different! Updating event details NOT YET IMPLEMENTED!!")
             # TODO: Implement updating of details when hashes don't match
-    else:
-        # add event to table
-        # Insert a row of data
-        if 'description' not in event:
-            event['description'] = "null"
-        if 'location' not in event:
-            event['location'] = "null"
-        if 'attendees' not in event:
-            event['attendees'] = "null"
-        sqlStatement = "INSERT INTO events VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', false, NULL, '{}')".format(event['id'], json.dumps(
-            event['start']), json.dumps(event['end']), event['summary'].replace("'", ""), event['description'], event['location'], json.dumps(event['attendees']), eventHash)
-        cur.execute(sqlStatement)
-        con.commit()
+            # REMOVE CRON JOB
+            my_cron = CronTab(user=CONFIG['User'])
+            iter = my_cron.find_command(event['id'])
+            for job in iter:
+                my_cron.remove(job)
+            my_cron.write()
+            # DELETE OLD ENTRY FROM DATABASE
+            sqlStatement = "DELETE FROM events WHERE googleId='{}'".format(
+                event['id'])
+            # INSET NEW ENTRY INTO DATABASE
+            cur.execute(sqlStatement)
+            con.commit()
+            insertIntoDatabase(event)
 
+    else:
+        insertIntoDatabase(event)
 # For each event in the database, check to see which ones have a scheduled notification (phone call)
 # For all events that dont have a scheduled notification, schedule the notification
 
