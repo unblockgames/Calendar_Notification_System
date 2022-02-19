@@ -1,5 +1,12 @@
 # Calendar_Notification_System
 
+WHATS NEW? 
+
+*Implemented multi-notification support with the use of <notify> tag in description.
+  
+  In the description of any event you can add a <notify></notify> tag and append a list of minutes prior to the event you'd like to be notified.
+  for example <notify>50,40,30,5,1</notify> would alert you 50 minutes, 40 minutes, 30 minutes, 5 minutes and 1 minute before an event.
+
 This is a custom implementation of a phone call notification system based on google calendar. The whole point of this project is to make an ADHD person such as myself not miss appointments anymore because the normal notifications provided by google calendar are insufficient. Furthermore, I do not wish to use Zapier or a paid SMS notification tool. I prefer a phone call but this software could easily send an SMS instead.
 
 In order to use this software, youll need a service account with Google and also youll need an account with Twilio.
