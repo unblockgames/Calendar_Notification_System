@@ -125,8 +125,7 @@ for event in events['items']:
     if len(fetched) > 0:
         print("Event \"{}\" already exists!".format(event['summary']))
         if fetched[0][0] != eventHash:
-            print("Hashes are different! Updating event details NOT YET IMPLEMENTED!!")
-            # TODO: Implement updating of details when hashes don't match
+            print("Hashes are different! Updating event details...")
             # REMOVE CRON JOB
             my_cron = CronTab(user=CONFIG['User'])
             iter = my_cron.find_command(event['id'])
@@ -140,7 +139,7 @@ for event in events['items']:
             cur.execute(sqlStatement)
             con.commit()
             insertIntoDatabase(event)
-
+            print("Event details updated!")
     else:
         insertIntoDatabase(event)
 # For each event in the database, check to see which ones have a scheduled notification (phone call)
