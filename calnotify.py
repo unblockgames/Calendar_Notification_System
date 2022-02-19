@@ -8,7 +8,7 @@ import hashlib as h
 from datetime import datetime, timedelta
 from config import CONFIG
 
-# Developtment
+# Development
 
 DIRECTORY = CONFIG['Directories']['codebase']
 PYTHON3 = CONFIG['Directories']['python3']
