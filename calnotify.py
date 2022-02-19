@@ -6,11 +6,10 @@ import json
 import sqlite3
 import hashlib as h
 from datetime import datetime, timedelta
+from config import CONFIG
 
-#Developtment
+# Developtment
 
-with open('/home/app/config.json', 'r') as f:
-    CONFIG = json.load(f)
 DIRECTORY = CONFIG['Directories']['codebase']
 PYTHON3 = CONFIG['Directories']['python3']
 # TODO: Add a way for this to be dynamic on a per event basis!
