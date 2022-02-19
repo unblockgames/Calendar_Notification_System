@@ -12,7 +12,6 @@ from config import CONFIG
 
 DIRECTORY = CONFIG['Directories']['codebase']
 PYTHON3 = CONFIG['Directories']['python3']
-# TODO: Add a way for this to be dynamic on a per event basis!
 minutesBefore = int(CONFIG['minutesBefore'])
 
 # SQLite database connection object
